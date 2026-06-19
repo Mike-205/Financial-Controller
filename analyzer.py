@@ -1,22 +1,23 @@
-# analyzer.py — Claude API prompt + analysis logic
+ # analyzer.py — Claude API prompt + analysis logic
 # Owner: Person 2 (feat/analyzer)
 #
 # Responsibilities:
 #   - Build the prompt with transaction data
-#   - Call Claude claude-sonnet-4-6 API
-#   - Parse JSON response (strip backticks first — Claude sometimes adds them)
+#   - Call Claude API asynchronously
+#   - Parse JSON response (strip backticks first)
 #   - Return structured report dict
-#
-# GOTCHA: Claude occasionally wraps JSON in ```json ... ```.
-#         Always strip before json.loads() or you'll get a parse error.
 
-import os, json, re
+import os
+import json
+import re
 import anthropic
 from dotenv import load_dotenv
 
+# Load environment variables from a .env file
 load_dotenv()
 
-client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+# Initialize the async client with the appropriate environment key
+client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 SYSTEM_PROMPT = """
 You are an AI financial controller reviewing books for a Kenyan SME.
@@ -38,7 +39,7 @@ Flag any of the following:
 3. ROUND_NUMBER: Exact round amounts (e.g. 50000, 100000) paid to individuals
    with no invoice reference number.
 
-Respond ONLY with this JSON:
+Respond ONLY with this JSON structure:
 {{
   "company": "{company_name}",
   "month": "{month}",
@@ -61,26 +62,5 @@ Respond ONLY with this JSON:
 def _strip_json_fences(text: str) -> str:
     """Remove ```json ... ``` fences Claude sometimes adds despite instructions."""
     text = text.strip()
-    text = re.sub(r"^```(?:json)?", "", text).strip()
-    text = re.sub(r"```$", "", text).strip()
-    return text
-
-
-async def analyze(transactions: list, company_name: str, month: str) -> dict:
-    """Send transactions to Claude and return structured flag report."""
-    prompt = USER_PROMPT_TEMPLATE.format(
-        company_name=company_name,
-        month=month,
-        transactions_json=json.dumps(transactions, indent=2),
-    )
-
-    # TODO Person 2: make the API call and parse the response
-    # response = client.messages.create(
-    #     model="claude-sonnet-4-6",
-    #     max_tokens=1000,
-    #     system=SYSTEM_PROMPT,
-    #     messages=[{"role": "user", "content": prompt}],
-    # )
-    # raw = _strip_json_fences(response.content[0].text)
-    # return json.loads(raw)
-    raise NotImplementedError("Person 2: implement analyze()")
+    # Safely strip leading markdown code blocks (case-insensitive)
+    text = re.sub(r"^
