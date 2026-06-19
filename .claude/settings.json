@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(pip:*)",
+      "Bash(pytest:*)",
+      "Bash(uvicorn:*)",
+      "Bash(cat:.env.example)",
+      "Read(**)",
+      "Write(*.py)",
+      "Write(docs/**)",
+      "Write(tests/**)"
+    ],
+    "deny": [
+      "Bash(cat:.env)",
+      "Bash(cat:credentials.json)",
+      "Bash(rm:-rf *)",
+      "Write(.env)",
+      "Write(credentials.json)",
+      "Write(zoho_tokens.json)"
+    ]
+  }
+}

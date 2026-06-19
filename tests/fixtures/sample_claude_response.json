@@ -1,0 +1,40 @@
+{
+  "company": "Mama Fua Enterprises",
+  "month": "May 2026",
+  "total_transactions_reviewed": 15,
+  "flags": [
+    {
+      "type": "MIXED_FUNDS",
+      "date": "2026-05-03",
+      "amount": 3500,
+      "description": "Naivas Supermarket",
+      "explanation": "Naivas is a personal grocery supermarket. This looks like personal shopping paid from the business account.",
+      "action_required": "Move this to your personal account or reimburse the business."
+    },
+    {
+      "type": "MIXED_FUNDS",
+      "date": "2026-05-12",
+      "amount": 850,
+      "description": "Parking fee CBD",
+      "explanation": "Personal parking fees should not be expensed to the business without a clear business purpose.",
+      "action_required": "Confirm whether this was a business trip. If personal, recode to owner drawings."
+    },
+    {
+      "type": "DUPLICATE",
+      "date": "2026-05-03",
+      "amount": 45000,
+      "description": "Supplier XYZ Invoice",
+      "explanation": "An identical payment of Ksh 45,000 to Supplier XYZ was made on May 1st and again on May 3rd.",
+      "action_required": "Confirm with Supplier XYZ whether both payments are valid. Request a receipt for the second payment."
+    },
+    {
+      "type": "ROUND_NUMBER",
+      "date": "2026-05-07",
+      "amount": 100000,
+      "description": "John Kamau",
+      "explanation": "A round Ksh 100,000 was paid to an individual with no invoice or reference number.",
+      "action_required": "Obtain a signed invoice or receipt from John Kamau before month end."
+    }
+  ],
+  "summary": "15 transactions reviewed for May 2026. 4 issues found: 2 personal expenses in the business account, 1 possible duplicate payment, and 1 undocumented round-number payment to an individual."
+}
