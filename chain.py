@@ -31,15 +31,49 @@ def _hash_report(report: dict) -> str:
     return hashlib.sha256(serialized.encode()).hexdigest()
 
 
+def _estimate_gas(data_bytes: bytes) -> int:
+    """Base 21000 + 68 per data byte, with a mandatory 20% buffer.
+    Without the buffer the tx can fail silently (see GOTCHA above)."""
+    return int((21000 + len(data_bytes) * 68) * 1.2)
+
+
+def _build_transaction(w3: "Web3", address: str, report_hash: str) -> dict:
+    """Build a 0-value self-transfer carrying the report hash in `data`."""
+    data_bytes = report_hash.encode()  # 64-byte hex string → bytes
+    return {
+        "from":     address,
+        "to":       address,            # send to self; this is an anchor, not a transfer
+        "value":    0,
+        "nonce":    w3.eth.get_transaction_count(address),
+        "gas":      _estimate_gas(data_bytes),
+        "gasPrice": w3.eth.gas_price,
+        "chainId":  CHAIN_ID,           # 43113 — Fuji testnet only, never mainnet
+        "data":     "0x" + data_bytes.hex(),
+    }
+
+
+def _raw_tx(signed) -> bytes:
+    """The raw signed bytes, across web3 v6 (rawTransaction) and v7 (raw_transaction)."""
+    return getattr(signed, "rawTransaction", None) or signed.raw_transaction
+
+
 def anchor_report(report: dict) -> str:
     """
     Write the report hash to Avalanche Fuji as a 0-value transaction.
     Returns the transaction hash (store this alongside the report).
     """
-    # TODO Person 5: implement
-    # 1. w3 = Web3(Web3.HTTPProvider(RPC_URL))
-    # 2. Load private key from env, derive sender address
-    # 3. report_hash = _hash_report(report)
-    # 4. Build tx with data=report_hash, value=0, chainId=CHAIN_ID
-    # 5. Sign + send, return tx hash
-    raise NotImplementedError("Person 5: implement anchor_report()")
+    w3 = Web3(Web3.HTTPProvider(RPC_URL))
+
+    private_key = os.getenv("AVAX_PRIVATE_KEY")
+    if not private_key:
+        raise RuntimeError("AVAX_PRIVATE_KEY is not set — cannot sign the anchor tx.")
+
+    account = w3.eth.account.from_key(private_key)
+    report_hash = _hash_report(report)
+
+    tx = _build_transaction(w3, account.address, report_hash)
+    signed = w3.eth.account.sign_transaction(tx, private_key)
+    tx_hash = w3.eth.send_raw_transaction(_raw_tx(signed))
+
+    tx_hex = tx_hash.hex()
+    return tx_hex if tx_hex.startswith("0x") else "0x" + tx_hex
