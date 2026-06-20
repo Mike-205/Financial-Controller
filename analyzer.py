@@ -16,7 +16,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+MODEL = "claude-sonnet-4-6"
+
+_client = None
+
+
+def _get_client() -> "anthropic.AsyncAnthropic":
+    """Lazily build the async client so importing this module never requires
+    an API key (keeps unit tests import-safe; they mock this out)."""
+    global _client
+    if _client is None:
+        _client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    return _client
 
 SYSTEM_PROMPT = """
 You are an AI financial controller reviewing books for a Kenyan SME.
@@ -74,13 +85,14 @@ async def analyze(transactions: list, company_name: str, month: str) -> dict:
         transactions_json=json.dumps(transactions, indent=2),
     )
 
-    # TODO Person 2: make the API call and parse the response
-    # response = client.messages.create(
-    #     model="claude-sonnet-4-6",
-    #     max_tokens=1000,
-    #     system=SYSTEM_PROMPT,
-    #     messages=[{"role": "user", "content": prompt}],
-    # )
-    # raw = _strip_json_fences(response.content[0].text)
-    # return json.loads(raw)
-    raise NotImplementedError("Person 2: implement analyze()")
+    response = await _get_client().messages.create(
+        model=MODEL,
+        max_tokens=2000,  # 4 flags + explanations can exceed the original 1000
+        system=SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    # GOTCHA: Claude sometimes wraps JSON in ```json ... ``` despite the
+    # system prompt. Strip fences before json.loads() or it raises.
+    raw = _strip_json_fences(response.content[0].text)
+    return json.loads(raw)
